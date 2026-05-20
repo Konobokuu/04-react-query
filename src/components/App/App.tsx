@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
@@ -11,7 +11,6 @@ import MovieModal from "../MovieModal/MovieModal";
 
 import { fetchMovies } from "../../services/movieService";
 import type { Movie } from "../../types/movie";
-
 import css from "./App.module.css";
 
 export default function App() {
@@ -21,41 +20,39 @@ export default function App() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["movies", query, page],
-    queryFn: () => fetchMovies(query, page),
-    enabled: query.trim() !== "",
+    queryFn: () => fetchMovies({ query, page }),
+    enabled: query !== "", // Запит не виконується, якщо рядок пошуку порожній
   });
+
+  const handleSearch = (newQuery: string) => {
+    setQuery(newQuery);
+    setPage(1); // Скидаємо сторінку на першу при новому пошуку
+  };
+
+  // Сповіщення, якщо фільмів не знайдено
+  useEffect(() => {
+    if (data && data.results.length === 0) {
+      toast.error("No movies found for your request.");
+    }
+  }, [data]);
 
   const movies = data?.results || [];
   const totalPages = data?.total_pages || 0;
 
-  const handleSearch = (newQuery: string) => {
-    if (newQuery.trim() === "") {
-      toast.error("Please enter a search term.");
-      return;
-    }
-    setQuery(newQuery);
-    setPage(1);
-  };
-
   return (
-    <>
+    <div className={css.app}>
       <SearchBar onSubmit={handleSearch} />
 
       <Toaster position="top-right" />
 
-      {}
-      {query !== "" && isLoading && <Loader />}
+      {isLoading && <Loader />}
 
       {isError && <ErrorMessage />}
 
       {movies.length > 0 && (
-        <MovieGrid
-          movies={movies}
-          onSelect={setSelectedMovie}
-        />
+        <MovieGrid movies={movies} onSelect={setSelectedMovie} />
       )}
 
-      {}
       {totalPages > 1 && (
         <ReactPaginate
           pageCount={totalPages}
@@ -76,6 +73,6 @@ export default function App() {
           onClose={() => setSelectedMovie(null)}
         />
       )}
-    </>
+    </div>
   );
 }

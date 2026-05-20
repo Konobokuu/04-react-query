@@ -1,15 +1,16 @@
 export interface Movie {
   id: number;
-  title: string;
   poster_path: string;
+  backdrop_path: string;
+  title: string;
+  overview: string;
   release_date: string;
   vote_average: number;
-  overview: string;
 }
 
-export interface TMDBResponse {
+export interface FetchMoviesResponse {
   results: Movie[];
-  page: number;
   total_pages: number;
   total_results: number;
+  page: number;
 }
