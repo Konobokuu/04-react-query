@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
 
 import SearchBar from "../SearchBar/SearchBar";
@@ -18,23 +18,25 @@ export default function App() {
   const [page, setPage] = useState<number>(1);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, isPlaceholderData } = useQuery({
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies({ query, page }),
-    enabled: query !== "", // Запит не виконується, якщо рядок пошуку порожній
+    enabled: query !== "", 
+    placeholderData: keepPreviousData, 
   });
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery);
-    setPage(1); // Скидаємо сторінку на першу при новому пошуку
+    setPage(1); 
   };
 
-  // Сповіщення, якщо фільмів не знайдено
+
   useEffect(() => {
-    if (data && data.results.length === 0) {
+
+    if (data && data.results.length === 0 && !isPlaceholderData) {
       toast.error("No movies found for your request.");
     }
-  }, [data]);
+  }, [data, isPlaceholderData]);
 
   const movies = data?.results || [];
   const totalPages = data?.total_pages || 0;
@@ -44,7 +46,6 @@ export default function App() {
       <SearchBar onSubmit={handleSearch} />
 
       <Toaster position="top-right" />
-
       {isLoading && <Loader />}
 
       {isError && <ErrorMessage />}
